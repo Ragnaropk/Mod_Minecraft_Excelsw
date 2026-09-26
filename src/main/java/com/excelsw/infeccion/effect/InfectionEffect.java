@@ -50,7 +50,7 @@ public class InfectionEffect extends MobEffect {
             if (entity.getRandom().nextInt(4) == 0) {
                 for (LivingEntity other : level.getEntitiesOfClass(LivingEntity.class,
                         entity.getBoundingBox().inflate(3.0), e -> e != entity && e.isAlive())) {
-                    Infection.tryInfect(other, 400, 0);
+                    Infection.tryInfect(other, 400, 0, false);
                 }
             }
         }

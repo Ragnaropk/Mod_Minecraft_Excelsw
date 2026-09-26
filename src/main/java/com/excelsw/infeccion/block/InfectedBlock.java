@@ -33,7 +33,7 @@ public class InfectedBlock extends Block {
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         if (!level.isClientSide() && entity instanceof LivingEntity living && level.random.nextInt(40) == 0) {
-            Infection.tryInfect(living, 300, 0);
+            Infection.tryInfect(living, 300, 0, false);
         }
         super.stepOn(level, pos, state, entity);
     }

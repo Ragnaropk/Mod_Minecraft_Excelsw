@@ -180,14 +180,22 @@ public final class Infection {
         return entity.isInvertedHealAndHarm(); // Los no-muertos ya están podridos por dentro.
     }
 
-    /**
-     * Infecta a una criatura. Si ya estaba infectada, la infección empeora (hasta nivel IV).
-     */
     public static boolean tryInfect(LivingEntity entity, int duration, int amplifier) {
+        return tryInfect(entity, duration, amplifier, true);
+    }
+
+    /**
+     * Infecta a una criatura. Si ya estaba infectada y {@code canWorsen} es true, la infección
+     * puede empeorar (hasta nivel IV).
+     */
+    public static boolean tryInfect(LivingEntity entity, int duration, int amplifier, boolean canWorsen) {
         if (entity.level().isClientSide() || isImmune(entity)) {
             return false;
         }
         MobEffectInstance current = entity.getEffect(ModEffects.INFECTION);
+        if (current != null && !canWorsen) {
+            return false;
+        }
         int newAmplifier = amplifier;
         int newDuration = duration;
         if (current != null) {
