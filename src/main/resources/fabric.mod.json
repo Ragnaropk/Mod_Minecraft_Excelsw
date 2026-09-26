@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "infeccion",
+  "version": "${version}",
+  "name": "Infección",
+  "description": "Una plaga que se propaga sin fin por el mundo infinito de Minecraft: bloques infectados, meteoritos, Infectados que se levantan de entre los muertos y un contagio que empeora cada semana.",
+  "authors": [
+    "Excelsw"
+  ],
+  "license": "MIT",
+  "icon": "assets/infeccion/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.excelsw.infeccion.InfeccionMod"
+    ],
+    "client": [
+      "com.excelsw.infeccion.client.InfeccionClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

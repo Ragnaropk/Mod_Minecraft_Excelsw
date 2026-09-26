@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "infeccion:block/infected_stone"
+    }
+  }
+}

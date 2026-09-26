@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "infeccion:infected_stone",
+    "infeccion:infection_hive",
+    "infeccion:purifier"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column_horizontal",
+  "textures": {
+    "end": "infeccion:block/infected_log_top",
+    "side": "infeccion:block/infected_log"
+  }
+}
