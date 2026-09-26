@@ -5,6 +5,7 @@ import com.excelsw.infeccion.effect.ModEffects;
 import com.excelsw.infeccion.entity.ModEntities;
 import com.excelsw.infeccion.item.ModItems;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,12 @@ public class InfeccionMod implements ModInitializer {
         ModItems.register();
         ModGameRules.register();
         InfectionEvents.register();
+
+        // El fuego quema la infección.
+        FlammableBlockRegistry fire = FlammableBlockRegistry.getDefaultInstance();
+        fire.add(ModBlocks.INFECTED_LOG, 5, 5);
+        fire.add(ModBlocks.INFECTED_LEAVES, 30, 60);
+        fire.add(ModBlocks.INFECTED_GROWTH, 60, 100);
         LOGGER.info("La infección ha comenzado...");
     }
 }

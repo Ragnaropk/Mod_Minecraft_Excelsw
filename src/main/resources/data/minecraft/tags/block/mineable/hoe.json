@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "infeccion:infected_leaves"
+    "infeccion:infected_leaves",
+    "infeccion:infected_growth"
   ]
 }

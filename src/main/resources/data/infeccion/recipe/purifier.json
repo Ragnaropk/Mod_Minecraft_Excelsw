@@ -4,7 +4,7 @@
   "pattern": [
     "IGI",
     "GVG",
-    "IDI"
+    "IHI"
   ],
   "key": {
     "I": {
@@ -16,8 +16,8 @@
     "V": {
       "item": "infeccion:vaccine"
     },
-    "D": {
-      "item": "minecraft:diamond"
+    "H": {
+      "item": "infeccion:infected_heart"
     }
   },
   "result": {

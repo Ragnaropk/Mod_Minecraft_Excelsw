@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "IBI",
+    "IFI",
+    " I "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "minecraft:blaze_rod"
+    },
+    "F": {
+      "item": "minecraft:flint_and_steel"
+    }
+  },
+  "result": {
+    "id": "infeccion:flamethrower",
+    "count": 1
+  }
+}

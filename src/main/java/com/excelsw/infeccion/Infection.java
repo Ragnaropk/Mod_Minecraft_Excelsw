@@ -3,6 +3,8 @@ package com.excelsw.infeccion;
 import com.excelsw.infeccion.block.ModBlocks;
 import com.excelsw.infeccion.effect.ModEffects;
 import com.excelsw.infeccion.entity.InfectedEntity;
+import com.excelsw.infeccion.entity.ModEntities;
+import com.excelsw.infeccion.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -12,9 +14,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -23,18 +27,22 @@ import org.jetbrains.annotations.Nullable;
 
 /** Toda la lógica de la infección: qué se infecta, cómo se contagia y cómo se cura. */
 public final class Infection {
+    /** Puntos de amenaza que suma cada bloque infectado y que resta cada bloque purificado. */
+    public static final int POINTS_PER_BLOCK = 1;
+    public static final int POINTS_PER_PURIFIED_BLOCK = 2;
+    public static final int POINTS_PER_HIVE_DESTROYED = 400;
+
     private Infection() {
     }
 
-    /** Cada 7 días de mundo la infección evoluciona y se propaga más rápido (máximo +4). */
-    public static int evolution(Level level) {
-        return (int) Math.min(4L, level.getDayTime() / 24000L / 7L);
+    public static int phase(ServerLevel level) {
+        return InfectionData.get(level).phase();
     }
 
     public static boolean isInfected(BlockState state) {
         return state.is(ModBlocks.INFECTED_DIRT) || state.is(ModBlocks.INFECTED_STONE)
                 || state.is(ModBlocks.INFECTED_LOG) || state.is(ModBlocks.INFECTED_LEAVES)
-                || state.is(ModBlocks.INFECTION_HIVE);
+                || state.is(ModBlocks.INFECTION_HIVE) || state.is(ModBlocks.INFECTED_GROWTH);
     }
 
     /** Devuelve la versión infectada de un bloque, o null si no se puede infectar. */
@@ -74,7 +82,10 @@ public final class Infection {
         return null;
     }
 
-    /** Devuelve la versión purificada de un bloque infectado, o null si no está infectado. */
+    /**
+     * Devuelve la versión purificada de un bloque infectado, o null si no se puede purificar.
+     * Los núcleos no se purifican: hay que romperlos a mano.
+     */
     @Nullable
     public static BlockState purifiedVersion(BlockState state) {
         if (state.is(ModBlocks.INFECTED_DIRT)) {
@@ -87,7 +98,7 @@ public final class Infection {
             return Blocks.OAK_LOG.defaultBlockState()
                     .setValue(RotatedPillarBlock.AXIS, state.getValue(RotatedPillarBlock.AXIS));
         }
-        if (state.is(ModBlocks.INFECTED_LEAVES) || state.is(ModBlocks.INFECTION_HIVE)) {
+        if (state.is(ModBlocks.INFECTED_LEAVES) || state.is(ModBlocks.INFECTED_GROWTH)) {
             return Blocks.AIR.defaultBlockState();
         }
         return null;
@@ -114,15 +125,16 @@ public final class Infection {
             return false;
         }
         level.setBlock(pos, infected, Block.UPDATE_ALL);
+        InfectionData.get(level).addPoints(POINTS_PER_BLOCK);
         return true;
     }
 
-    /** Propagación desde un bloque infectado hacia sus vecinos. */
+    /** Propagación desde un bloque infectado hacia sus vecinos. Cada fase añade intentos extra. */
     public static void spread(ServerLevel level, BlockPos origin, RandomSource random, int radius, int bonusAttempts) {
         if (!level.getGameRules().getBoolean(ModGameRules.SPREAD)) {
             return;
         }
-        int attempts = level.getGameRules().getInt(ModGameRules.SPREAD_SPEED) + bonusAttempts + evolution(level);
+        int attempts = level.getGameRules().getInt(ModGameRules.SPREAD_SPEED) + bonusAttempts + phase(level);
         for (int i = 0; i < attempts; i++) {
             BlockPos target = origin.offset(
                     random.nextInt(radius * 2 + 1) - radius,
@@ -167,6 +179,7 @@ public final class Infection {
         level.setBlock(pos, purified, Block.UPDATE_ALL);
         level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 2, 0.3, 0.2, 0.3, 0.01);
+        InfectionData.get(level).addPoints(-POINTS_PER_PURIFIED_BLOCK);
         return true;
     }
 
@@ -180,20 +193,36 @@ public final class Infection {
         return entity.isInvertedHealAndHarm(); // Los no-muertos ya están podridos por dentro.
     }
 
+    /** La máscara de gas filtra las esporas del aire, pero se va gastando. */
+    private static boolean maskBlocks(LivingEntity entity) {
+        ItemStack head = entity.getItemBySlot(EquipmentSlot.HEAD);
+        if (!head.is(ModItems.GAS_MASK)) {
+            return false;
+        }
+        head.hurtAndBreak(1, entity, EquipmentSlot.HEAD);
+        return true;
+    }
+
+    /** Contagio directo (mordisco, espora lanzada): puede empeorar la infección. */
     public static boolean tryInfect(LivingEntity entity, int duration, int amplifier) {
-        return tryInfect(entity, duration, amplifier, true);
+        return tryInfect(entity, duration, amplifier, true, false);
     }
 
     /**
-     * Infecta a una criatura. Si ya estaba infectada y {@code canWorsen} es true, la infección
-     * puede empeorar (hasta nivel IV).
+     * Infecta a una criatura.
+     *
+     * @param canWorsen si ya estaba infectada, puede subir de nivel (hasta IV)
+     * @param airborne  contagio por esporas en el aire: la máscara de gas lo bloquea
      */
-    public static boolean tryInfect(LivingEntity entity, int duration, int amplifier, boolean canWorsen) {
+    public static boolean tryInfect(LivingEntity entity, int duration, int amplifier, boolean canWorsen, boolean airborne) {
         if (entity.level().isClientSide() || isImmune(entity)) {
             return false;
         }
         MobEffectInstance current = entity.getEffect(ModEffects.INFECTION);
         if (current != null && !canWorsen) {
+            return false;
+        }
+        if (airborne && maskBlocks(entity)) {
             return false;
         }
         int newAmplifier = amplifier;
@@ -209,5 +238,18 @@ public final class Infection {
                     SoundSource.HOSTILE, 0.6F, 1.4F);
         }
         return added;
+    }
+
+    /** Elige qué tipo de Infectado nace según la fase de la plaga. */
+    public static EntityType<? extends InfectedEntity> pickVariant(int phase, RandomSource random) {
+        int roll = random.nextInt(100);
+        return switch (phase) {
+            case 0 -> ModEntities.INFECTED;
+            case 1 -> roll < 60 ? ModEntities.INFECTED : roll < 85 ? ModEntities.RUNNER : ModEntities.SPITTER;
+            case 2 -> roll < 40 ? ModEntities.INFECTED : roll < 65 ? ModEntities.RUNNER
+                    : roll < 80 ? ModEntities.SPITTER : roll < 95 ? ModEntities.BLOATER : ModEntities.BRUTE;
+            default -> roll < 30 ? ModEntities.INFECTED : roll < 55 ? ModEntities.RUNNER
+                    : roll < 70 ? ModEntities.SPITTER : roll < 85 ? ModEntities.BLOATER : ModEntities.BRUTE;
+        };
     }
 }

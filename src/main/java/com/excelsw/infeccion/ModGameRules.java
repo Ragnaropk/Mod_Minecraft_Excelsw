@@ -16,6 +16,9 @@ public final class ModGameRules {
     /** Si las criaturas que mueren infectadas se levantan como Infectados. */
     public static GameRules.Key<GameRules.BooleanValue> RESURRECTION;
 
+    /** Si se muestra la barra de amenaza global. */
+    public static GameRules.Key<GameRules.BooleanValue> BOSS_BAR;
+
     private ModGameRules() {
     }
 
@@ -30,5 +33,7 @@ public final class ModGameRules {
                 GameRules.Category.MISC, GameRuleFactory.createIntRule(12000, 200));
         RESURRECTION = GameRuleRegistry.register("infeccionResurreccion",
                 GameRules.Category.MOBS, GameRuleFactory.createBooleanRule(true));
+        BOSS_BAR = GameRuleRegistry.register("infeccionBarra",
+                GameRules.Category.MISC, GameRuleFactory.createBooleanRule(true));
     }
 }

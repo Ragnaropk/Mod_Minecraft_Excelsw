@@ -4,6 +4,8 @@ import com.excelsw.infeccion.Infection;
 import com.excelsw.infeccion.effect.ModEffects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -54,6 +56,15 @@ public class InfectedEntity extends Zombie {
             return false;
         }
         return super.canBeAffected(effect);
+    }
+
+    /** El fuego es su punto débil: reciben el doble de daño. */
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (source.is(DamageTypeTags.IS_FIRE)) {
+            amount *= 2.0F;
+        }
+        return super.hurt(source, amount);
     }
 
     @Override

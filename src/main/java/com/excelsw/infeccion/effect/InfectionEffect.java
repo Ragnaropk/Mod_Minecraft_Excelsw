@@ -5,6 +5,10 @@ import com.excelsw.infeccion.ModTags;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -50,13 +54,24 @@ public class InfectionEffect extends MobEffect {
             if (entity.getRandom().nextInt(4) == 0) {
                 for (LivingEntity other : level.getEntitiesOfClass(LivingEntity.class,
                         entity.getBoundingBox().inflate(3.0), e -> e != entity && e.isAlive())) {
-                    Infection.tryInfect(other, 400, 0, false);
+                    Infection.tryInfect(other, 400, 0, false, true);
                 }
             }
         }
         if (amplifier >= 2) {
             entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 120, 0, true, false));
             entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0, true, false));
+        }
+        if (amplifier >= 3 && entity instanceof ServerPlayer player && player.getRandom().nextInt(3) == 0) {
+            // Alucinaciones: solo el infectado oye a los Infectados que no están ahí.
+            SoundEvent sound = switch (player.getRandom().nextInt(4)) {
+                case 0 -> SoundEvents.ZOMBIE_AMBIENT;
+                case 1 -> SoundEvents.WARDEN_NEARBY_CLOSE;
+                case 2 -> SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR;
+                default -> SoundEvents.SCULK_SHRIEKER_SHRIEK;
+            };
+            player.playNotifySound(sound, SoundSource.HOSTILE, 0.7F, 0.6F + player.getRandom().nextFloat() * 0.4F);
+            player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0, true, false));
         }
         return true;
     }

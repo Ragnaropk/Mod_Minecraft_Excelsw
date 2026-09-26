@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 
 public final class ModBlocks {
     public static final Block INFECTED_DIRT = register("infected_dirt", new InfectedBlock(
@@ -31,6 +32,11 @@ public final class ModBlocks {
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(5.0F, 12.0F)
                     .sound(SoundType.SCULK_SHRIEKER).lightLevel(state -> 9)
                     .requiresCorrectToolForDrops().randomTicks()));
+
+    public static final Block INFECTED_GROWTH = register("infected_growth", new InfectedGrowthBlock(
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).noCollission().instabreak()
+                    .sound(SoundType.SCULK_VEIN).lightLevel(state -> 5).replaceable()
+                    .pushReaction(PushReaction.DESTROY)));
 
     public static final Block PURIFIER = register("purifier", new PurifierBlock(
             BlockBehaviour.Properties.of().mapColor(MapColor.DIAMOND).strength(3.0F, 9.0F)
